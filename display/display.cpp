@@ -85,6 +85,19 @@ void Display::Input()
             gQuit = true;
         }
     }
+
+    // Retrieve keyboard state
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+
+    if (state[SDL_SCANCODE_UP]) {
+        uOffset += 0.001f;
+        std::cout << uOffset << std::endl;
+    }
+
+    if (state[SDL_SCANCODE_DOWN]) {
+        uOffset -= 0.001f;
+        std::cout << uOffset << std::endl;
+    }
 }
 
 std::string Display::getScreenTitle() const
@@ -100,6 +113,10 @@ int Display::getScreenHeight() const
 int Display::getScreenWidth() const
 {
     return screenWidth;
+}
+
+float Display::getUOffset() const {
+    return uOffset;
 }
 
 bool Display::getGQuit() const

@@ -15,6 +15,8 @@ class Display
         std::string title;
         int screenHeight;
         int screenWidth;
+
+        float uOffset = 0.5f;
         
         bool gQuit;
         
@@ -32,6 +34,7 @@ class Display
         std::string getScreenTitle() const;
         int getScreenHeight() const;
         int getScreenWidth() const;
+        float getUOffset() const;
         bool getGQuit() const;
         SDL_GLContext getOpenGLContext() const;
         SDL_Window* getGraphicsApplicationWindow() const;

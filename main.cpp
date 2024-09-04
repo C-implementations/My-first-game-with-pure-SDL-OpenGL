@@ -1,6 +1,7 @@
 // Third party libraries
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 // own libraries
 #include "display/display.h"
@@ -11,7 +12,6 @@
 #include <fstream>
 
 /* Test of glm */
-
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
@@ -123,16 +123,45 @@ and the OpenGL context (with the appropriate version)
 @return void
 
 */
-void PreDraw(int screenWidth, int screenHeight)
+void PreDraw(Display* display)
 {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
-    glViewport(0,0, screenWidth, screenHeight);
+    glViewport(0,0, display->getScreenWidth(), display->getScreenHeight());
     glClearColor(1.0f, 0.984f, 0.0f, 1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     glUseProgram(gGraphicsPipelineShaderProgram);
+    
+    // Model transformation by translating the object to world space
+    glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, display->getUOffset()));
+
+    // Retrieve our location of our model matrix
+    GLint u_ModelMatrixLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
+
+    if (u_ModelMatrixLocation >= 0) {
+        glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
+    } else {
+        std::cout << "Could not find model matrix uniform(s), maybe a mispelling?\n" << std::endl;
+    }
+
+    // Projection matrix (in perspective)
+    glm::mat4 projection = glm::perspective(
+        glm::radians(45.0f),
+        (float) display->getScreenWidth()/(float)display->getScreenHeight(),
+        0.1f, // how close can we see things, if something is closer then we cannot see it
+        10.0f
+    );
+
+    // Retrieve our location of our perspective matrix
+    GLint u_ProjectionLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_Projection");
+
+    if (u_ProjectionLocation >= 0) {
+        glUniformMatrix4fv(u_ProjectionLocation, 1, GL_FALSE, &projection[0][0]);
+    } else {
+        std::cout << "Could not find projection uniform, maybe a mispelling?\n" << std::endl;
+    }
 }
 
 void Draw()
@@ -157,7 +186,7 @@ void MainLoop(Display* display)
     while (!display->getGQuit())
     {
         display->Input();
-        PreDraw(display->getScreenWidth(), display->getScreenHeight());
+        PreDraw(display);
         Draw();
         SDL_GL_SwapWindow(display->getGraphicsApplicationWindow());
     }
@@ -399,7 +428,8 @@ void CreateGraphicsPipeline()
 
 int main(int argc, char *argv[])
 {
-    Display* display = new Display("First OpenGL", 700, 600);
+    // 1. setup the graphics program
+    Display* display = new Display("First OpenGL", 1000, 900);
 
     // 2. setup our geometry
     VertexSpecification();
