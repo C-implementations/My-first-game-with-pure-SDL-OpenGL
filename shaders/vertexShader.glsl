@@ -12,6 +12,6 @@ void main()
 {
    v_vertexColors = vertexColors;
    vec4 newPosition = u_Projection * u_ModelMatrix * vec4(position, 1.0f);
-
+                                                               // do not forget 'w'
    gl_Position = vec4(newPosition.x, newPosition.y, newPosition.z, newPosition.w);
 }

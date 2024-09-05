@@ -135,13 +135,16 @@ void PreDraw(Display* display)
     glUseProgram(gGraphicsPipelineShaderProgram);
     
     // Model transformation by translating the object to world space
-    glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, display->getUOffset()));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, display->getUOffset()));
+    // Rotate it
+    model = glm::rotate(model, glm::radians(display->getGRotate()), glm::vec3(1.0f, 1.0f, 1.0f));
+    model = glm::scale(model, glm::vec3(display->getGScale(), display->getGScale(), display->getGScale()));
 
     // Retrieve our location of our model matrix
     GLint u_ModelMatrixLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
 
     if (u_ModelMatrixLocation >= 0) {
-        glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
+        glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &model[0][0]);
     } else {
         std::cout << "Could not find model matrix uniform(s), maybe a mispelling?\n" << std::endl;
     }

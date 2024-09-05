@@ -90,12 +90,22 @@ void Display::Input()
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
     if (state[SDL_SCANCODE_UP]) {
-        uOffset += 0.001f;
+        uOffset += 0.005f;
         std::cout << uOffset << std::endl;
     }
 
+    if (state[SDL_SCANCODE_RIGHT]) {
+        gRotate += 0.1f;
+        std::cout << gRotate << std::endl;
+    }
+
+    if (state[SDL_SCANCODE_LEFT]) {
+        gRotate -= 0.1f;
+        std::cout << gRotate << std::endl;
+    }
+
     if (state[SDL_SCANCODE_DOWN]) {
-        uOffset -= 0.001f;
+        uOffset -= 0.005f;
         std::cout << uOffset << std::endl;
     }
 }
@@ -115,8 +125,16 @@ int Display::getScreenWidth() const
     return screenWidth;
 }
 
+float Display::getGRotate() const {
+    return gRotate;
+}
+
 float Display::getUOffset() const {
     return uOffset;
+}
+
+float Display::getGScale() const {
+    return gScale;
 }
 
 bool Display::getGQuit() const
