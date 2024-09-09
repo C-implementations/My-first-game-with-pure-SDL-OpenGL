@@ -6,6 +6,8 @@
 #include <glad/glad.h>
 #include <string>
 
+#include "Camera.hpp"
+
 // C++ standard template library (STL)
 #include <iostream>
 
@@ -15,6 +17,7 @@ class Display
         std::string title;
         int screenHeight;
         int screenWidth;
+        float speed = 0.001f;
 
         float uOffset = -2.0f;
         float gRotate = 0.0f;
@@ -31,7 +34,7 @@ class Display
         void GetOpenGLVersionInfo();
         void InitializeProgram();
         void CleanUp();
-        void Input();
+        void Input(Camera* camera);
 
         std::string getScreenTitle() const;
         int getScreenHeight() const;

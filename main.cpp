@@ -19,6 +19,9 @@
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
 
+/* Our libraries */
+#include "Camera.hpp"
+
 glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 {
 	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
@@ -71,6 +74,10 @@ GLuint gGraphicsPipelineShaderProgram = 0;
 GLuint gVertexArrayObject = 0; // VAO
 GLuint gVertexBufferObject = 0; // VBO
 GLuint gIndexBufferObject = 0; // IBO (EBO)
+
+/* Our Camera */
+// Create a single global camera
+Camera* gCamera = new Camera();
 
 /* Error handling routines */
 static void GLClearAllErrors()
@@ -149,6 +156,16 @@ void PreDraw(Display* display)
         std::cout << "Could not find model matrix uniform(s), maybe a mispelling?\n" << std::endl;
     }
 
+    /* View matrix */
+    glm::mat4 view = gCamera->GetViewMatrix();
+    GLint u_ViewLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ViewMatrix");
+
+    if (u_ViewLocation >= 0) {
+        glUniformMatrix4fv(u_ViewLocation, 1, GL_FALSE, &view[0][0]);
+    } else {
+        std::cout << "Could not find viewmatrix uniform, maybe a mispelling?\n" <<  std::endl;
+    }
+
     // Projection matrix (in perspective)
     glm::mat4 projection = glm::perspective(
         glm::radians(45.0f),
@@ -172,9 +189,6 @@ void Draw()
     /* Enable our attributes */
     glBindVertexArray(gVertexArrayObject);
     
-    /* Select the vertex buffer object we want to enable */
-    glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
-    
     /* Render data */
     //glDrawArrays(GL_TRIANGLES, 0, 6);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -188,7 +202,7 @@ void MainLoop(Display* display)
 {
     while (!display->getGQuit())
     {
-        display->Input();
+        display->Input(gCamera);
         PreDraw(display);
         Draw();
         SDL_GL_SwapWindow(display->getGraphicsApplicationWindow());

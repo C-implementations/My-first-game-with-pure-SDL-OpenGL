@@ -72,5 +72,6 @@
     "ratio": "cpp",
     "xhash": "cpp"
   },
-  "makefile.configureOnOpen": true
+  "makefile.configureOnOpen": true,
+  "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,2 +1,2 @@
 all:
-	g++ -std=c++11 -I thirdparty/glm-master -I thirdparty/glm-master/glm -I thirdparty/glm-master -I glad/include -I display -I src/include -L src/lib -o main main.cpp glad.c display/display.cpp -l mingw32 -l SDL2main -l SDL2
+	g++ -std=c++11 -I include -I thirdparty/glm-master -I thirdparty/glm-master/glm -I thirdparty/glm-master -I glad/include -I display -I src/include -L src/lib -o main main.cpp glad.c src/Camera.cpp display/display.cpp -l mingw32 -l SDL2main -l SDL2

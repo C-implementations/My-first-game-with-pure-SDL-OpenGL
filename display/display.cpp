@@ -1,7 +1,10 @@
 #include "display.h"
+#include <Camera.hpp>
 
 Display::Display(std::string title, int width, int height)
 {
+    SDL_WarpMouseInWindow(gGraphicsApplicationWindow, getScreenWidth()/2, getScreenHeight()/2);
+
     title = title;
     screenWidth = width;
     screenHeight = height;
@@ -73,8 +76,11 @@ void Display::CleanUp()
     SDL_Quit();
 }
 
-void Display::Input()
+void Display::Input(Camera* camera)
 {
+    static int mouseX = getScreenWidth()/2;
+    static int mouseY = getScreenHeight()/2;
+
     SDL_Event e;
 
     while ( SDL_PollEvent(&e) != 0 )
@@ -84,29 +90,34 @@ void Display::Input()
             std::cout << "Goodbye!" << std::endl;
             gQuit = true;
         }
+        
+        if (e.type == SDL_MOUSEMOTION)
+        {
+            mouseX += e.motion.xrel;
+            mouseY += e.motion.yrel;
+            camera->MouseLook(mouseX, mouseY);
+        }
     }
+
+    gRotate += 0.001f;
 
     // Retrieve keyboard state
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
     if (state[SDL_SCANCODE_UP]) {
-        uOffset += 0.005f;
-        std::cout << uOffset << std::endl;
+        camera->MoveForward(speed);
     }
 
     if (state[SDL_SCANCODE_RIGHT]) {
-        gRotate += 0.1f;
-        std::cout << gRotate << std::endl;
+        camera->MoveRight(speed);
     }
 
     if (state[SDL_SCANCODE_LEFT]) {
-        gRotate -= 0.1f;
-        std::cout << gRotate << std::endl;
+        camera->MoveLeft(speed);
     }
 
     if (state[SDL_SCANCODE_DOWN]) {
-        uOffset -= 0.005f;
-        std::cout << uOffset << std::endl;
+        camera->MoveBackward(speed);
     }
 }
 
