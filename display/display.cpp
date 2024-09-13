@@ -119,6 +119,10 @@ void Display::Input(Camera* camera)
     if (state[SDL_SCANCODE_DOWN]) {
         camera->MoveBackward(speed);
     }
+
+    if (state[SDL_SCANCODE_ESCAPE]) {
+        gQuit = true;
+    }
 }
 
 std::string Display::getScreenTitle() const

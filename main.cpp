@@ -31,7 +31,6 @@ glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 	return Projection * View * Model;
 }
-
 /* end of glm */
 
 /* globals */
@@ -55,29 +54,60 @@ std::string LoadShaderAsString(const std::string& fileName)
     return result;
 }
 
-// shader
-// The following stores the a unique id for the graphics pipeline
-// program object that will be used for our OpenGL draw calls.
-GLuint gGraphicsPipelineShaderProgram = 0;
+struct App {
+    // shader
+    // The following stores the a unique id for the graphics pipeline
+    // program object that will be used for our OpenGL draw calls.
+    GLuint mGraphicsPipelineShaderProgram = 0;
 
-// OpenGL Objects
-// Vertex Array Object (VAO)
-// Vertex array objects encapsulate all of the items needed to render an object.
-// For example, we may have multiple vertex buffer objects (VBO) related to rendering one
-// object. The VAO allows us to setup the OpenGL state to render that object using
-// the correct layout and correct buffers with one call after being setup.
+    /* Our Camera */
+    // Create a single global camera
+    Camera* mCamera = new Camera();
+};
 
-// Vertex Buffer Object (VBO)
-// Vertex Buffer Objects store information relating to vertices (e.g. positions,
-// normals, textures)
-// VBOs are our mechanism for arranging geometry on the GPU.
-GLuint gVertexArrayObject = 0; // VAO
-GLuint gVertexBufferObject = 0; // VBO
-GLuint gIndexBufferObject = 0; // IBO (EBO)
+struct Mesh3D {
+    // OpenGL Objects
+    // Vertex Array Object (VAO)
+    // Vertex array objects encapsulate all of the items needed to render an object.
+    // For example, we may have multiple vertex buffer objects (VBO) related to rendering one
+    // object. The VAO allows us to setup the OpenGL state to render that object using
+    // the correct layout and correct buffers with one call after being setup.
 
-/* Our Camera */
-// Create a single global camera
-Camera* gCamera = new Camera();
+    // Vertex Buffer Object (VBO)
+    // Vertex Buffer Objects store information relating to vertices (e.g. positions,
+    // normals, textures)
+    // VBOs are our mechanism for arranging geometry on the GPU.
+    GLuint mVertexArrayObject = 0; // VAO
+    GLuint mVertexBufferObject = 0; // VBO
+    GLuint mIndexBufferObject = 0; // IBO (EBO)
+
+    std::vector<GLfloat> vertexData {
+            // 0 - Vertex
+            -0.5f, -0.5f, 0.0f, // position
+            1.0f, 0.0f, 0.0f, // color
+            // 1 - Vertex
+            0.5f, -0.5f, 0.0f, // position
+            0.0f, 1.0f, 0.0f, // color
+            // 2 - Vertex
+            -0.5f, 0.5f, 0.0f, // position
+            0.0f, 0.0f, 1.0f, // color
+            // 3 - Vertex
+            0.5f, 0.5f, 0.0f, // position
+            1.0f, 0.0f, 0.0f, // color
+    };
+
+    std::vector<GLuint> indexBufferData {
+            2, 0, 1, 3, 2, 1
+    };
+
+    float m_uOffset = -2.0f;
+    float m_uRotate = 0.0f;
+    float m_uScale = 0.5f;
+};
+
+/* Globals */
+App* gApp = new App(); // Global Application
+Mesh3D* gMesh1 = new Mesh3D();
 
 /* Error handling routines */
 static void GLClearAllErrors()
@@ -135,33 +165,43 @@ void PreDraw(Display* display)
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
-    glViewport(0,0, display->getScreenWidth(), display->getScreenHeight());
+    glViewport(0,0,
+               display->getScreenWidth(),
+               display->getScreenHeight());
     glClearColor(1.0f, 0.984f, 0.0f, 1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(gGraphicsPipelineShaderProgram);
+    glUseProgram(gApp->mGraphicsPipelineShaderProgram);
     
     // Model transformation by translating the object to world space
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, display->getUOffset()));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f),
+                                     glm::vec3(0.0f, 0.0f,
+                                               gMesh1->m_uOffset));
     // Rotate it
-    model = glm::rotate(model, glm::radians(display->getGRotate()), glm::vec3(1.0f, 1.0f, 1.0f));
-    model = glm::scale(model, glm::vec3(display->getGScale(), display->getGScale(), display->getGScale()));
+    model = glm::rotate(model, glm::radians(gMesh1->m_uRotate),
+                        glm::vec3(1.0f, 1.0f, 1.0f));
+
+    float scale = gMesh1->m_uScale;
+    model = glm::scale(model, glm::vec3(scale,
+                                        scale,
+                                        scale));
 
     // Retrieve our location of our model matrix
-    GLint u_ModelMatrixLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
+    GLint u_ModelMatrixLocation = glGetUniformLocation(gApp->mGraphicsPipelineShaderProgram,
+                                                       "u_ModelMatrix");
 
     if (u_ModelMatrixLocation >= 0) {
-        glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+        glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &model[0][0]);
     } else {
         std::cout << "Could not find model matrix uniform(s), maybe a mispelling?\n" << std::endl;
     }
 
     /* View matrix */
-    glm::mat4 view = gCamera->GetViewMatrix();
-    GLint u_ViewLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ViewMatrix");
+    glm::mat4 view = gApp->mCamera->GetViewMatrix();
+    GLint u_ViewLocation = glGetUniformLocation(gApp->mGraphicsPipelineShaderProgram, "u_ViewMatrix");
 
     if (u_ViewLocation >= 0) {
-        glUniformMatrix4fv(u_ViewLocation, 1, GL_FALSE, &view[0][0]);
+        glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
     } else {
         std::cout << "Could not find viewmatrix uniform, maybe a mispelling?\n" <<  std::endl;
     }
@@ -175,10 +215,10 @@ void PreDraw(Display* display)
     );
 
     // Retrieve our location of our perspective matrix
-    GLint u_ProjectionLocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_Projection");
+    GLint u_ProjectionLocation = glGetUniformLocation(gApp->mGraphicsPipelineShaderProgram, "u_Projection");
 
     if (u_ProjectionLocation >= 0) {
-        glUniformMatrix4fv(u_ProjectionLocation, 1, GL_FALSE, &projection[0][0]);
+        glUniformMatrix4fv(u_ProjectionLocation, 1, false, &projection[0][0]);
     } else {
         std::cout << "Could not find projection uniform, maybe a mispelling?\n" << std::endl;
     }
@@ -187,7 +227,7 @@ void PreDraw(Display* display)
 void Draw()
 {
     /* Enable our attributes */
-    glBindVertexArray(gVertexArrayObject);
+    glBindVertexArray(gMesh1->mVertexArrayObject);
     
     /* Render data */
     //glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -202,7 +242,7 @@ void MainLoop(Display* display)
 {
     while (!display->getGQuit())
     {
-        display->Input(gCamera);
+        display->Input(gApp->mCamera);
         PreDraw(display);
         Draw();
         SDL_GL_SwapWindow(display->getGraphicsApplicationWindow());
@@ -215,7 +255,7 @@ Setup your geometry during the vertex specification step
 @return void
 
 */
-void VertexSpecification()
+void VertexSpecification(Mesh3D* meshData)
 {
     /*
     
@@ -232,20 +272,7 @@ void VertexSpecification()
     */
 
     // Lives on the cpu
-    const std::vector<GLfloat> vertexData {
-        // 0 - Vertex
-        -0.5f, -0.5f, 0.0f, // position
-        1.0f, 0.0f, 0.0f, // color
-        // 1 - Vertex
-        0.5f, -0.5f, 0.0f, // position
-        0.0f, 1.0f, 0.0f, // color
-        // 2 - Vertex
-        -0.5f, 0.5f, 0.0f, // position
-        0.0f, 0.0f, 1.0f, // color
-        // 3 - Vertex
-        0.5f, 0.5f, 0.0f, // position
-        1.0f, 0.0f, 0.0f, // color
-    };
+    const std::vector<GLfloat> vertexData = meshData->vertexData;
 
     /*
     
@@ -301,13 +328,14 @@ void VertexSpecification()
     // Start generating our VBO
 
     // We start setting things up on the GPU
-    glGenVertexArrays(1, &gVertexArrayObject);
-    glBindVertexArray(gVertexArrayObject);
+    glGenVertexArrays(1, &meshData->mVertexArrayObject);
+    glBindVertexArray(meshData->mVertexArrayObject);
 
     /* Vertex coords buffer */
-    glGenBuffers(1, &gVertexBufferObject);
-    glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
-    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(GLfloat), 
+    glGenBuffers(1, &meshData->mVertexBufferObject);
+    glBindBuffer(GL_ARRAY_BUFFER, meshData->mVertexBufferObject);
+    glBufferData(GL_ARRAY_BUFFER,
+                 vertexData.size() * sizeof(GLfloat ),
                 vertexData.data(), 
                 GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
@@ -315,18 +343,16 @@ void VertexSpecification()
         0, // layout=0
         3, // number of components
         GL_FLOAT, // type
-        GL_FALSE, // is the data normalized
-        sizeof(GL_FLOAT) * 6, // Stride (how to get the next component)
+        false, // is the data normalized
+        sizeof(GLfloat ) * 6, // Stride (how to get the next component)
         (GLvoid*)0 // Offset
     );
 
     /* Setup the index buffer object (IBO) or EBO(Element Array Object Buffer)  */
-    const std::vector<GLuint> indexBufferData {
-        2, 0, 1, 3, 2, 1
-    };
+    const std::vector<GLuint> indexBufferData = meshData->indexBufferData;
 
-    glGenBuffers(1, &gIndexBufferObject);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferObject);
+    glGenBuffers(1, &meshData->mIndexBufferObject);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshData->mIndexBufferObject);
     /* Populate our Index Buffer */
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
@@ -341,9 +367,9 @@ void VertexSpecification()
         1,
         3,
         GL_FLOAT,
-        GL_FALSE,
-        sizeof(GL_FLOAT) * 6,
-        (void*) (sizeof(GL_FLOAT) * 3)
+        false,
+        sizeof(GLfloat) * 6,
+        (void*) (sizeof(GLfloat) * 3)
     );
     
     glBindVertexArray(0);
@@ -440,7 +466,13 @@ void CreateGraphicsPipeline()
     std::string vertexShaderSource = LoadShaderAsString("./shaders/vertexShader.glsl");
     std::string fragmentShaderSource = LoadShaderAsString("./shaders/fragmentShader.glsl");
 
-    gGraphicsPipelineShaderProgram = CreateShaderProgram(vertexShaderSource, fragmentShaderSource);
+    gApp->mGraphicsPipelineShaderProgram = CreateShaderProgram(vertexShaderSource, fragmentShaderSource);
+}
+
+void CleanUpMeshData()
+{
+    glDeleteBuffers(1, &gMesh1->mVertexBufferObject);
+    glDeleteVertexArrays(1, &gMesh1->mVertexArrayObject);
 }
 
 int main(int argc, char *argv[])
@@ -449,7 +481,7 @@ int main(int argc, char *argv[])
     Display* display = new Display("First OpenGL", 1000, 900);
 
     // 2. setup our geometry
-    VertexSpecification();
+    VertexSpecification(gMesh1);
 
     // 3. Create our graphics pipeline
     // At a minimum, this means the vertex and fragment shader
@@ -457,7 +489,10 @@ int main(int argc, char *argv[])
 
     // 4. Call the main application loop
     MainLoop(display);
-    
+
+    // 4.5 Clean up entities
+    CleanUpMeshData();
+
     // 5. call the cleanup function when our program terminates
     display->CleanUp();
 
